@@ -1,9 +1,9 @@
 # -*- coding: UTF-8 -*-
 
 __author__ = 'Step'
-import urllib2
+import urllib.request 
 import json
-from urllib import urlencode
+from urllib.parse import urlencode
 from functools import wraps
 import os
 
@@ -31,12 +31,12 @@ def create_opener(url, username, password):
     @type username: string
     @type password: string
     """
-    auth_handler = urllib2.HTTPBasicAuthHandler()
+    auth_handler = urllib.request.HTTPBasicAuthHandler()
     auth_handler.add_password(realm='OTS',
                               uri=url,
                               user=username,
                               passwd=password)
-    opener = urllib2.build_opener(auth_handler)
+    opener = urllib.request.build_opener(auth_handler)
     return opener
 
 class OneTimeSecret(object):
@@ -94,14 +94,14 @@ class OneTimeSecret(object):
 
         data = {"secret":secret.encode("utf-8"), 
                 "ttl":ttl}
-        
+
         if passphrase:
             data.update({"passphrase":passphrase.encode("utf-8")})
         if recipient:
             data.update({"recipient":recipient.encode("utf-8")})
 
         url = self.url % "share"
-        raw = urllib2.urlopen(url, urlencode(data)).read()
+        raw = urllib.request.urlopen(url, urlencode(data).encode("utf-8")).read()
         res = json.loads(raw)
         return res
 
@@ -130,7 +130,7 @@ class OneTimeSecret(object):
             data.update({"recipient":recipient.encode("utf-8")})
 
         url = self.url % "generate"
-        raw = urllib2.urlopen(url, urlencode(data)).read()
+        raw = urllib.request.urlopen(url, urlencode(data).encode("utf-8")).read()
         res = json.loads(raw)
         return res
 
@@ -159,10 +159,10 @@ class OneTimeSecret(object):
                 data.update({"passphrase":passphrase.encode("utf-8")})
 
             url = self.url % "secret/%s" % secret_key
-            raw = urllib2.urlopen(url, urlencode(data)).read()
+            raw = urllib.request.urlopen(url, urlencode(data).encode("utf-8")).read()
             res = json.loads(raw)
             return res
-        except urllib2.HTTPError:
+        except urllib.request.HTTPError:
             raise Exception("Check key and passphrase")
 
     @server_check
@@ -183,9 +183,9 @@ class OneTimeSecret(object):
         data = {"METADATA_KEY":meta_key}
 
         url = self.url % "private/%s" % meta_key
-        raw = urllib2.urlopen(url, urlencode(data)).read()
+        raw = urllib.request.urlopen(url, urlencode(data).encode("utf-8")).read()
         res = json.loads(raw)
-        if not res.has_key(u"received"):
+        if "received" not in res:
             res.update({u"received":False})
         return res
 
@@ -228,22 +228,22 @@ class OneTimeSecret(object):
 
         data = {"METADATA_KEY":meta_key}
         url = self.url % "private/%s" % meta_key
-        raw = urllib2.urlopen(url, urlencode(data)).read()
+        raw = urllib.request.urlopen(url, urlencode(data).encode("utf-8")).read()
         res = json.loads(raw)
 
         return self.secret_link_url + res['secret_key']
 
     def status(self):
         """
-        Checks server's ability to process our request. Also, sets necessary credentials for urllib2.
+        Checks server's ability to process our request. Also, sets necessary credentials for urllib.request.
         Returns True if all is OK, else False.
 
         @rtype: bool
         """
         try:
-            urllib2.install_opener(self.opener)
+            urllib.request.install_opener(self.opener)
             url = self.url % "status"
-            raw = urllib2.urlopen(url).read()
+            raw = urllib.request.urlopen(url).read()
             return json.loads(raw)[u"status"] == u"nominal"
-        except (urllib2.URLError, ValueError, KeyError):
+        except (urllib.request.URLError, ValueError, KeyError):
             return False
